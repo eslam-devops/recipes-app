@@ -1,0 +1,291 @@
+# =========================
+# Namespace
+# =========================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+---
+# =========================
+# ConfigMap
+# =========================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recipes-config
+  namespace: prod
+data:
+  APP_NAME: recipes-app
+  APP_ENV: production
+---
+# =========================
+# Secret
+# =========================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: recipes-secret
+  namespace: prod
+type: Opaque
+stringData:
+  DB_PASSWORD: supersecret
+---
+# =========================
+# ServiceAccount
+# =========================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: recipes-sa
+  namespace: prod
+---
+# =========================
+# Role
+# =========================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: recipes-role
+  namespace: prod
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps/v1"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+# =========================
+# RoleBinding
+# =========================
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: recipes-rb
+  namespace: prod
+subjects:
+  - kind: ServiceAccount
+    name: recipes-sa
+    namespace: prod
+roleRef:
+  kind: Role
+  name: recipes-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# =========================
+# Deployment (Main App)
+# =========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recipes-app
+  namespace: prod
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: recipes
+  template:
+    metadata:
+      labels:
+        app: recipes
+    spec:
+      serviceAccountName: recipes-sa
+
+      initContainers:
+        - name: init-check
+          image: busybox
+          command: ["sh", "-c", "echo init done"]
+
+      containers:
+        - name: app
+          image: eslamzain99/recipes_app:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 80
+
+          envFrom:
+            - configMapRef:
+                name: recipes-config
+            - secretRef:
+                name: recipes-secret
+
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 30
+            periodSeconds: 5
+---
+# =========================
+# Service (ClusterIP)
+# =========================
+apiVersion: v1
+kind: Service
+metadata:
+  name: recipes-svc
+  namespace: prod
+spec:
+  type: ClusterIP
+  selector:
+    app: recipes
+  ports:
+    - port: 80
+      targetPort: 80
+---
+# =========================
+# Ingress (Minikube)
+# =========================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: recipes-ingress
+  namespace: prod
+spec:
+  rules:
+    - host: recipes.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: recipes-svc
+                port:
+                  number: 80
+---
+# =========================
+# Horizontal Pod Autoscaler
+# =========================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: recipes-hpa
+  namespace: prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: recipes-app
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+# =========================
+# Pod Disruption Budget
+# =========================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: recipes-pdb
+  namespace: prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: recipes
+---
+# =========================
+# Job (One-time task)
+# =========================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: recipes-migration
+  namespace: prod
+spec:
+  template:
+    spec:
+      containers:
+        - name: migrate
+          image: busybox
+          command: ["sh", "-c", "echo running migration"]
+      restartPolicy: Never
+---
+# =========================
+# CronJob (Scheduled task)
+# =========================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: recipes-cleanup
+  namespace: prod
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cleanup
+              image: busybox
+              command: ["sh", "-c", "echo cleanup job"]
+          restartPolicy: OnFailure
+---
+# =========================
+# ResourceQuota
+# =========================
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: prod-quota
+  namespace: prod
+spec:
+  hard:
+    pods: "20"
+    requests.cpu: "4"
+    requests.memory: 4Gi
+    limits.cpu: "8"
+    limits.memory: 8Gi
+---
+# =========================
+# LimitRange
+# =========================
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: prod-limits
+  namespace: prod
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "200m"
+        memory: "256Mi"
+      type: Container
