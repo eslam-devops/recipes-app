@@ -40,7 +40,7 @@ metadata:
   namespace: prod
 ---
 # =========================
-# Role
+# Role 
 # =========================
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -289,3 +289,149 @@ spec:
         cpu: "200m"
         memory: "256Mi"
       type: Container
+---
+# =========================
+#pv and pvc
+# =========================
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: recipes-pv
+  namespace: prod
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce #means only one pod can read and write
+    # or ReadWriteMany means multiple pods can read and write
+    #or ReadOnlyMany means multiple pods can read only
+  hostPath:
+    path: /mnt/data
+    #path on the host node
+    #in real production use nfs or cloud storage
+  persistentVolumeReclaimPolicy: Retain #Retain, Recycle, Delete
+  #Retain keeps the data, Recycle deletes data, Delete deletes the PV
+  # Recycle is deprecated
+  #Delete  for testing
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: recipes-pvc
+  namespace: prod
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""
+  volumeName: recipes-pv
+---
+# # =========================
+# #try macke it ReadWriteMany
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: recipes-pv-rwm
+#   namespace: prod
+# spec:
+#   capacity:
+#     storage: 1Gi
+#   accessModes:
+#     - ReadWriteMany
+#   nfs:
+#     server: 192.168.1.100
+#     path: /mnt/nfs/recipes
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: recipes-pvc-rwm
+#   namespace: prod
+# spec:
+#   accessModes:
+#     - ReadWriteMany
+#   resources:
+#     requests:
+#       storage: 1Gi
+#   storageClassName: ""
+#   volumeName: recipes-pv-rwm
+# ---
+# #try macke it  ReadOnlyMany
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: recipes-pv-rom
+#   namespace: prod
+# spec:
+#   capacity:
+#     storage: 1Gi
+#   accessModes:
+#     - ReadOnlyMany
+#   nfs:
+#     server: 192.168.1.100
+#     path: /mnt/nfs/recipes
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: recipes-pvc-rom
+#   namespace: prod
+# spec:
+#   accessModes:
+#     - ReadOnlyMany
+#   resources:
+#     requests:
+#       storage: 1Gi
+#   storageClassName: ""
+#   volumeName: recipes-pv-rom
+# ---
+# # Cloud Provider Volumes (Examples)
+# # =========================
+# # AWS EBS
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: recipes-pv-aws
+#   namespace: prod
+# spec:
+#   capacity:
+#     storage: 5Gi
+#   accessModes:
+#     - ReadWriteOnce
+#   awsElasticBlockStore:
+#     volumeID: vol-0abcd1234efgh5678
+#     fsType: ext4
+# ---
+# # GCE PD
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: recipes-pv-gce
+#   namespace: prod
+# spec:
+#   capacity:
+#     storage: 5Gi
+#   accessModes:
+#     - ReadWriteOnce
+#   gcePersistentDisk:
+#     pdName: my-gce-disk
+#     fsType: ext4
+# ---
+# # Azure Disk
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: recipes-pv-azure
+#   namespace: prod
+# spec:
+#   capacity:
+#     storage: 5Gi
+#   accessModes:
+#     - ReadWriteOnce
+#   azureDisk:
+#     diskName: my-azure-disk
+#     diskURI: /subscriptions/xxxx/resourceGroups/xxxx/providers/Microsoft.Compute/disks/my-azure-disk
+#     cachingMode: ReadWrite
+#     fsType: ext4
