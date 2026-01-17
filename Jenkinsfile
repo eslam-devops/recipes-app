@@ -5,6 +5,10 @@ pipeline {
         DOCKER_IMAGE = "eslamzain99/recipes_app"
         DOCKER_TAG   = "${BUILD_NUMBER}"
         KUBE_NAMESPACE = "prod"
+        // cred = credentials('aws-key')
+        // dockerhub_cred = credentials('docker-cred')
+        // DOCKER_IMAGE = "eslamzain99/recipes_app"
+        // DOCKER_TAG = "$BUILD_NUMBER"
     }
 
     stages {
@@ -27,6 +31,10 @@ pipeline {
 
         stage('Docker Login') {
             steps {
+                // sh "echo $dockerhub_cred_PSW | docker login -u $dockerhub_cred_USR --password-stdin"
+                // sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                // sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                // sh "docker push ${DOCKER_IMAGE}:latest"
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER',
@@ -48,11 +56,14 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
+                //  sh 'aws eks update-kubeconfig --region us-east-1 --name devops-working'
+                // sh 'kubectl apply -f Application.yaml'
                 sh """
                 kubectl apply -f k8s/
                 kubectl set image deployment/recipes-app \
                   app=${DOCKER_IMAGE}:${DOCKER_TAG} \
                   -n ${KUBE_NAMESPACE}
+                
                 """
             }
         }
