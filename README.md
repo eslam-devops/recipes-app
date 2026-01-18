@@ -5,6 +5,9 @@ The project demonstrates CI/CD automation with Jenkins, container orchestration 
 
 ---
 
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/aef5936b-7519-44e7-a147-ea1cd99c450f" />
+
+
 ## 📌 Project Overview
 
 This project showcases a real-world DevOps workflow, starting from containerizing a Python application to deploying it on a Kubernetes cluster with autoscaling, health checks, RBAC, and CI/CD automation.
