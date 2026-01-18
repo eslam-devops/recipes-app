@@ -79,6 +79,9 @@ pipeline {
     }
 
     post {
+        alwase {
+            echo "run it alwase"
+        }
         success {
             echo "✅ Deployment completed successfully"
         }
