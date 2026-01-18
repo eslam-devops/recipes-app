@@ -5,10 +5,8 @@ pipeline {
         DOCKER_IMAGE = "eslamzain99/recipes_app"
         DOCKER_TAG   = "${BUILD_NUMBER}"
         KUBE_NAMESPACE = "prod"
-        // cred = credentials('aws-key')
-        // dockerhub_cred = credentials('docker-cred')
-        // DOCKER_IMAGE = "eslamzain99/recipes_app"
-        // DOCKER_TAG = "$BUILD_NUMBER"
+        cred = credentials('aws-key')
+        dockerhub_cred = credentials('docker-cred')
     }
 
     stages {
@@ -31,14 +29,14 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                // sh "echo $dockerhub_cred_PSW | docker login -u $dockerhub_cred_USR --password-stdin"
-                // sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                // sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
-                // sh "docker push ${DOCKER_IMAGE}:latest"
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                sh "echo $dockerhub_cred_PSW | docker login -u $dockerhub_cred_USR --password-stdin"
+                sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                sh "docker push ${DOCKER_IMAGE}:latest"
+                // withCredentials([usernamePassword(
+                //     credentialsId: 'dockerhub-creds',
+                //     usernameVariable: 'DOCKER_USER',
+                //     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                 }
