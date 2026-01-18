@@ -57,9 +57,9 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 //  sh 'aws eks update-kubeconfig --region us-east-1 --name devops-working'
-                // sh 'kubectl apply -f Application.yaml'
+                // sh 'kubectl apply -f recipes-app-full.yamll'
                 sh """
-                kubectl apply -f k8s/
+                kubectl apply -f recipes-app-full.yaml/
                 kubectl set image deployment/recipes-app \
                   app=${DOCKER_IMAGE}:${DOCKER_TAG} \
                   -n ${KUBE_NAMESPACE}
