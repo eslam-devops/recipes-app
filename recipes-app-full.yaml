@@ -146,41 +146,41 @@ spec:
             failureThreshold: 30
             periodSeconds: 5
 ---
+=========================
+Service (ClusterIP)
+=========================
+apiVersion: v1
+kind: Service
+metadata:
+  name: recipes-svc
+  namespace: prod
+spec:
+  type: ClusterIP
+  selector:
+    app: recipes
+  ports:
+    - port: 80
+      targetPort: 80
+---
+
 # =========================
-# Service (ClusterIP)
+# Service (LoadBalancer)
 # =========================
 # apiVersion: v1
 # kind: Service
 # metadata:
 #   name: recipes-svc
 #   namespace: prod
+#   annotations:
+#     service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+#     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
 # spec:
-#   type: ClusterIP
+#   type: LoadBalancer
 #   selector:
 #     app: recipes
 #   ports:
 #     - port: 80
 #       targetPort: 80
----
-
-# =========================
-# Service (LoadBalancer)
-# =========================
-apiVersion: v1
-kind: Service
-metadata:
-  name: recipes-svc
-  namespace: prod
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-spec:
-  type: LoadBalancer
-  selector:
-    app: recipes
-  ports:
-    - port: 80
-      targetPort: 80
 ---
 # =========================
 # Ingress 
