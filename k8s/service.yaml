@@ -9,5 +9,6 @@ spec:
     app: recipes
   ports:
     - port: 80
-      targetPort: 5000
+      targetPort: 8000
+
 
